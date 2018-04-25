@@ -1,0 +1,29 @@
+#!/usr/bin/env python
+# -*- coding: utf8 -*-
+
+from requests import request
+import sys
+import json
+import notify2
+import urllib
+
+sys.exit() if (len(sys.argv) < 2) else ''
+
+text = sys.argv[1:999999]
+
+notify2.init('translate')
+
+#   see page for get api-key https://translate.yandex.ru/developers/keys
+apikey = 'CHANGE_ME'
+
+lang = 'ru'
+text = urllib.parse.urlencode({'text': ' '.join(text)})
+
+url = "https://translate.yandex.net/api/v1.5/tr.json/" \
+      "translate?key={0}&{1}&lang={2}&format=plain".format(apikey, text, lang)
+
+print(url)
+response = request('GET', url)
+result = response.json()['text'][0]
+notice = notify2.Notification("Перевод: ", result)
+notice.show()
