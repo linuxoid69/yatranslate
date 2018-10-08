@@ -1,7 +1,6 @@
 package main
 
 import (
-	"strings"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -11,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 )
 
 const (
@@ -127,19 +127,29 @@ type YandexResponse struct {
 	Text []string `json:"text"`
 }
 
-func CreateLogo(logo string) {
+// DecodeLogo decode logo from string base64
+func DecodeLogo(logo string) ([]byte, error) {
 	l, err := base64.StdEncoding.DecodeString(logo)
 	if err != nil {
 		log.Println("error in decoding logo")
+		return nil, err
 	}
-	e := ioutil.WriteFile(LOGOFILE, l, 0777)
-	if e != nil {
-		log.Printf("error write to file: %s", LOGOFILE)
-	}
+	return l, nil
 }
+
+// SaveLogo save logo to file
+func SaveLogo(f string, l []byte) (bool, error) {
+	err := ioutil.WriteFile(LOGOFILE, l, 0777)
+	if err != nil {
+		log.Printf("error write to file: %s", LOGOFILE)
+		return false, err
+	}
+	return true, nil
+}
+
 func GetTranslate(text []string) string {
 	v := url.Values{}
-	v.Set("text", strings.Join(text," "))
+	v.Set("text", strings.Join(text, " "))
 	token := "secret"
 	url := fmt.Sprintf("https://translate.yandex.net/api/v1.5/tr.json/translate?key=%s&%s&lang=ru&format=plain", token, v.Encode())
 	res, err := http.Get(url)
@@ -157,7 +167,11 @@ func GetTranslate(text []string) string {
 
 func main() {
 	if _, err := os.Stat(LOGOFILE); os.IsNotExist(err) {
-		CreateLogo(YANDEXLOGO)
+		l,er := DecodeLogo(YANDEXLOGO)
+		if er != nil{
+			log.Println("Error decode logo")
+		}
+		SaveLogo(LOGOFILE,l)
 	}
 	text := fmt.Sprintf("%s", GetTranslate(os.Args[1:]))
 	notify.Notify("app name", "Translate", text, "/var/tmp/yalogo.jpeg")
