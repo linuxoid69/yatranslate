@@ -145,7 +145,7 @@ func GetTranslate(text []string) string {
 	res, err := http.Get(url)
 
 	if err != nil {
-		panic("api yandex not availeble")
+		panic("api yandex not available")
 	}
 
 	defer res.Body.Close()
