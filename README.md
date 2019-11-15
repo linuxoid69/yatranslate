@@ -3,3 +3,6 @@ Script for auto-translate through yandex api.
 
 ## Depencies:
 `yum install notification-daemon xsel`
+## Build
+## Support languages:
+en -> ru
