@@ -4,12 +4,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/jcmuller/gozenity"
 	"github.com/martinlindhe/notify"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 )
 
@@ -118,11 +120,15 @@ L0nzRH/JSJ93T93OQY9xwGuJ7AFm01kutWQKe3VUmetsTseeMLoBF5Gijxs229KLzHs4oj47/wCo
 VBbtnF6qyHVXRUcZ577t53kPvIU5suhbRZ3NldGauoHESTDIB9zeQ+JUmRb6afHTrEKnVcZ1epjl
 tbaPKOn3ERFvVQiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiI
 gIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiD/9k=`
-
-	LOGOFILE = "/var/tmp/yalogo.jpeg"
 )
 
-// YandexResponse respose json from yandex
+var (
+	appDir      = os.Getenv("HOME") + "/.yatranslate/"
+	logoFile    = appDir + "yalogo.jpeg"
+	yandexToken = appDir + "token"
+)
+
+// YandexResponse respose json from Yandex
 type YandexResponse struct {
 	Text []string `json:"text"`
 }
@@ -139,18 +145,26 @@ func DecodeLogo(logo string) ([]byte, error) {
 
 // SaveLogo save logo to file
 func SaveLogo(f string, l []byte) (bool, error) {
-	err := ioutil.WriteFile(LOGOFILE, l, 0777)
+	err := ioutil.WriteFile(logoFile, l, 0744)
 	if err != nil {
-		log.Printf("error write to file: %s", LOGOFILE)
+		log.Printf("error write to file: %s", logoFile)
 		return false, err
 	}
 	return true, nil
 }
 
+// GetTranslate get a translate from Yandex
 func GetTranslate(text []string) string {
 	v := url.Values{}
+
 	v.Set("text", strings.Join(text, " "))
-	token := "secret"
+
+	t, err := ioutil.ReadFile(yandexToken)
+
+	if err != nil {
+		log.Fatalln("Can't read token from file ", yandexToken)
+	}
+	token := string(t)
 	url := fmt.Sprintf("https://translate.yandex.net/api/v1.5/tr.json/translate?key=%s&%s&lang=ru&format=plain", token, v.Encode())
 	res, err := http.Get(url)
 
@@ -159,20 +173,78 @@ func GetTranslate(text []string) string {
 	}
 
 	defer res.Body.Close()
+
 	body, _ := ioutil.ReadAll(res.Body)
+
 	var ya YandexResponse
+
 	json.Unmarshal(body, &ya)
+
 	return ya.Text[0]
 }
 
-func main() {
-	if _, err := os.Stat(LOGOFILE); os.IsNotExist(err) {
-		l,er := DecodeLogo(YANDEXLOGO)
-		if er != nil{
+// CheckApplicationDir check a dirictory of application
+func CheckApplicationDir() {
+	_, err := os.Stat(appDir)
+	if err != nil {
+		log.Println("Create a directory of application " + appDir)
+		err := os.Mkdir(appDir, 0700)
+		if err != nil {
+			log.Println("Can't create a directory of application " + appDir + " error: " + err.Error())
+		}
+	}
+}
+
+// ChecklogoFile check a file of logo
+func ChecklogoFile() error {
+	var err error
+	if _, err := os.Stat(logoFile); os.IsNotExist(err) {
+		l, er := DecodeLogo(YANDEXLOGO)
+		if er != nil {
 			log.Println("Error decode logo")
 		}
-		SaveLogo(LOGOFILE,l)
+		SaveLogo(logoFile, l)
 	}
-	text := fmt.Sprintf("%s", GetTranslate(os.Args[1:]))
-	notify.Notify("app name", "Translate", text, "/var/tmp/yalogo.jpeg")
+	return err
+}
+
+// CheckToken check a token for a request to api of Yandex
+func CheckToken() error {
+	_, err := os.Stat(yandexToken)
+	if err != nil {
+		requestToken()
+	}
+	return err
+}
+
+// request a token from a user
+func requestToken() {
+	var p string
+	var err error
+	for p == "" {
+		p, err = gozenity.Password("Yandex API token:")
+		if err != nil {
+			return
+		}
+	}
+
+	b, _ := regexp.MatchString("^trnsl.*", p)
+	if b {
+		ioutil.WriteFile(yandexToken, []byte(p), 0744)
+	} else {
+		gozenity.Error("Token isn't valid!")
+		requestToken()
+	}
+	return
+}
+
+func main() {
+	CheckApplicationDir()
+	ChecklogoFile()
+	CheckToken()
+	lenghWords := len(os.Args[1:])
+	if lenghWords != 0 {
+		text := fmt.Sprintf("%s", GetTranslate(os.Args[1:]))
+		notify.Notify("app name", "Translate", text, logoFile)
+	}
 }
