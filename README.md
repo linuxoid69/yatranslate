@@ -4,18 +4,22 @@ For working of an application, you have to get a [token](https://translate.yande
 
 ## Depencies:
 `yum install notification-daemon xsel`
-## Build 
+## Build.
 ```bash
 make build
 ```
-## Install
+## Install.
 ```bash
 make install
 ```
-## Uninstall
+## Uninstall.
 
 ```bash
 make uninstall
 ```
+## Get a binary version.
+
+Get [yatranslate](https://github.com/linuxoid69/yatranslate/releases)  
+
 ## Support languages:
 en -> ru
