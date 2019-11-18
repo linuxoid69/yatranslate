@@ -3,6 +3,7 @@
 # .DEFAULT_GOAL := build
 build:
 	set GOPATH=%cd%
+	GO111MODULE="on" go mod vendor
 	go build
 
 install:
