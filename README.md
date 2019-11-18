@@ -3,8 +3,8 @@ Script for auto-translate through yandex api.
 For working of an application, you have to get a [token](https://translate.yandex.ru/developers/keys) Yandex API.  
 ## Usage.
 
-`$ yatranslate test` 
-![example](/img/example.png)
+`$ yatranslate test`  
+![example](/img/example.png)  
 
 This command can set on hotkey
 ```bash
