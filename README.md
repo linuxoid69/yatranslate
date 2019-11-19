@@ -10,7 +10,7 @@ This command can set on hotkey
 ```bash
 $ yatranslate `xsel`
 ```
-## Depencies:
+## Dependencies:
 `yum install notification-daemon xsel`
 ## Build.
 ```bash
